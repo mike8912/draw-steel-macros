@@ -1,5 +1,5 @@
 // Save these as a Foundry macro (script)
-
+// Optional: Global Progress Clocks Module
 const token = canvas.tokens.controlled[0];
 
 if (!token) {
@@ -23,13 +23,12 @@ if (!negotiation) {
 }
 
 // Check for Clock Database
-if (!window.clockDatabase) {
-    ui.notifications.error("Clock Database module not active.");
-    return;
-}
+let clocksActive = window.clockDatabase !== undefined;
+
 async function setClock(clockName, value) {
+    if (!clocksActive) return;
     const clock = window.clockDatabase.getName(clockName);
-    
+
     if (!clock) {
         ui.notifications.warn(`Clock named "${clockName}" not found in database.`);
         return;
@@ -39,16 +38,39 @@ async function setClock(clockName, value) {
     await window.clockDatabase.update({ id: clock.id, value: value });
 }
 
-// Retrieve values (Checking if they are direct numbers or objects with a 'value' property)
-// This handles cases where data might be stored as { value: 3, max: 5 } or just 3.
-const rawInterest = negotiation.interest;
-const rawPatience = negotiation.patience;
-
-const interestVal = (typeof rawInterest === 'object') ? (rawInterest.value || 0) : (rawInterest || 0);
-const patienceVal = (typeof rawPatience === 'object') ? (rawPatience.value || 0) : (rawPatience || 0);
+const unwrap = (obj) => (typeof obj === 'object') ? obj.value || 0 : obj || 0;
+const interestVal = unwrap(negotiation.interest);
+const patienceVal = unwrap(negotiation.patience);
 
 // Update the Clocks
 await setClock("Interest", interestVal);
 await setClock("Patience", patienceVal);
 
 ui.notifications.info(`Clocks set to NPC values: Interest (${interestVal}), Patience (${patienceVal}).`);
+
+let content = `
+    Start negotation with <strong>${actor.name}</strong>.<br/>
+    <strong>Interest:</strong> ${interestVal}<br/>
+    <strong>Patience:</strong> ${patienceVal}<br/>`;
+
+ChatMessage.create({
+    user: game.user.id,
+    speaker: 'Director',
+    content: content
+});
+
+// GM message with motivations and pitfalls
+const motivations = negotiation.motivations;
+const pitfalls = negotiation.pitfalls;
+const mapSetToString = (set) => Array.from(set).join(", ");
+const gmContent = `
+    <strong>Motivations:</strong> ${mapSetToString(motivations)}<br/>
+    <strong>Pitfalls:</strong> ${mapSetToString(pitfalls)}
+`;
+
+ChatMessage.create({
+    user: game.user.id,
+    speaker: 'Director',
+    content: gmContent,
+    whisper: ChatMessage.getWhisperRecipients("Director")
+});
