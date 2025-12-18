@@ -27,16 +27,16 @@ let clocksActive = window.clockDatabase !== undefined;
 
 async function setClock(clockName, value) {
     if (!clocksActive) return;
-    const clock = window.clockDatabase.getName(clockName);
 
+    const clock = window.clockDatabase.getName(clockName);
     if (!clock) {
         ui.notifications.warn(`Clock named "${clockName}" not found in database.`);
         return;
     }
 
-    // Update the clock value
     await window.clockDatabase.update({ id: clock.id, value: value });
 }
+
 
 const unwrap = (obj) => (typeof obj === 'object') ? obj.value || 0 : obj || 0;
 const interestVal = unwrap(negotiation.interest);
