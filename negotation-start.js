@@ -1,5 +1,7 @@
 // Save these as a Foundry macro (script)
 // Optional: Global Progress Clocks Module
+
+// Target an NPC and it'll take the values from their biography (negotation)
 const token = canvas.tokens.controlled[0];
 
 if (!token) {
